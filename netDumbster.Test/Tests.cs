@@ -18,6 +18,15 @@
         private SimpleSmtpServer server;
         private Random _Rnd = new Random();
 
+        private const string TEXT_BODY = "this is the body";
+        private const string HTML_BODY = "this is the html body";
+        private const string RUSSIAN_BODY = "Съешь ещё этих мягких французских булок, да выпей чаю" +
+                                            "Съешь ещё этих мягких французских булок, да выпей чаю" +
+                                            "Съешь ещё этих мягких французских булок, да выпей чаю" +
+                                            "Съешь ещё этих мягких французских булок, да выпей чаю" +
+                                            "Съешь ещё этих мягких французских булок, да выпей чаю" +
+                                            "Съешь ещё этих мягких французских булок, да выпей чаю";
+
         #endregion Fields
 
         #region Constructors
@@ -68,7 +77,7 @@
             SendMail(false, false, null, port);
 
             Assert.AreEqual(1, fixedPortServer.ReceivedEmailCount);
-            Assert.AreEqual("this is the body", fixedPortServer.ReceivedEmail[0].MessageParts[0].BodyData);
+            Assert.AreEqual(TEXT_BODY, fixedPortServer.ReceivedEmail[0].MessageParts[0].BodyData);
 
             fixedPortServer.Stop();
 
@@ -77,7 +86,7 @@
             SendMail(false, false, null, port);
 
             Assert.AreEqual(1, fixedPortServer.ReceivedEmailCount);
-            Assert.AreEqual("this is the body", fixedPortServer.ReceivedEmail[0].MessageParts[0].BodyData);
+            Assert.AreEqual(TEXT_BODY, fixedPortServer.ReceivedEmail[0].MessageParts[0].BodyData);
 
             fixedPortServer.Stop();
         }
@@ -98,10 +107,12 @@
 
             SendMail(false, true, data);
             Assert.AreEqual(1, server.ReceivedEmailCount);
-            Assert.AreEqual("this is the html body\r\n", server.ReceivedEmail[0].MessageParts[0].BodyData);
+            Assert.AreEqual(HTML_BODY + "\r\n", server.ReceivedEmail[0].MessageParts[0].BodyData);
             Assert.IsNotNull(server.ReceivedEmail[0].MessageParts[1]);
             Assert.IsNotNull(server.ReceivedEmail[0].MessageParts[1].BodyData);
             Assert.IsNotEmpty(server.ReceivedEmail[0].MessageParts[1].BodyData);
+            Assert.IsNotEmpty(server.ReceivedEmail[0].MessageParts[1].BodyData);
+            Assert.AreEqual("base64", server.ReceivedEmail[0].MessageParts[1].Headers["content-transfer-encoding"]);
             Assert.AreEqual(System.Convert.ToBase64String(data) + "\r\n", server.ReceivedEmail[0].MessageParts[1].BodyData);
         }
 
@@ -149,11 +160,36 @@
         }
 
         [Test]
+        public void Send_Email_With_RussianText_8bit()
+        {
+            var oMsg = new CDO.Message();
+            CDO.IConfiguration iConfg = oMsg.Configuration;
+            var oFields = iConfg.Fields;
+            oFields[@"http://schemas.microsoft.com/cdo/configuration/smtpserver"].Value = "localhost";
+            oFields[@"http://schemas.microsoft.com/cdo/configuration/sendusing"].Value = 2;
+            oFields[@"http://schemas.microsoft.com/cdo/configuration/smtpserverport"].Value = server.Port;
+            oFields.Update();
+
+            oMsg.BodyPart.Charset = "utf-8";
+            oMsg.Subject = "Test CDO";
+            oMsg.From = "from@mail.com";
+            oMsg.To = "to@mail.com";
+            oMsg.TextBody = RUSSIAN_BODY;
+            oMsg.Send();
+
+            Assert.AreEqual(1, server.ReceivedEmailCount);
+            Assert.AreEqual("8bit", server.ReceivedEmail[0].Headers["content-transfer-encoding"]);
+            Assert.AreEqual(RUSSIAN_BODY + "\r\n", server.ReceivedEmail[0].MessageParts[0].BodyData);
+
+            server.Stop();
+        }
+
+        [Test]
         public void Send_Html_Email()
         {
             SendMail(false, true, null);
             Assert.AreEqual(1, server.ReceivedEmailCount);
-            Assert.AreEqual("this is the html body", server.ReceivedEmail[0].MessageParts[0].BodyData);
+            Assert.AreEqual(HTML_BODY, server.ReceivedEmail[0].MessageParts[0].BodyData);
         }
 
         [Test]
@@ -161,7 +197,7 @@
         {
             SendMail();
             Assert.AreEqual(1, server.ReceivedEmailCount);
-            Assert.AreEqual("this is the body", server.ReceivedEmail[0].MessageParts[0].BodyData);
+            Assert.AreEqual(TEXT_BODY, server.ReceivedEmail[0].MessageParts[0].BodyData);
         }
 
         [Test]
@@ -196,11 +232,13 @@
         {
             using (SmtpClient client = new SmtpClient("localhost", serverPort))
             {
-                var mailMessage = new MailMessage("carlos@mendible.com", "karina@mendible.com", "test", "this is the body");
+                var mailMessage = new MailMessage("carlos@mendible.com", "karina@mendible.com", "test", TEXT_BODY);
                 mailMessage.IsBodyHtml = isBodyHtml;
 
                 if (isBodyHtml)
-                    mailMessage.Body = "this is the html body";
+                {
+                    mailMessage.Body = HTML_BODY;
+                }
 
                 if (smtpAuth)
                 {

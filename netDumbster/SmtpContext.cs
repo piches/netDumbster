@@ -65,7 +65,7 @@ namespace netDumbster.smtp
             message = new SmtpMessage();
 
             // Set the encoding to ASCII.
-            encoding = Encoding.ASCII;
+            encoding = Encoding.GetEncoding(1252);
 
             // Initialize the input buffer
             inputBuffer = new StringBuilder();

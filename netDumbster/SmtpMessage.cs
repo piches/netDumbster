@@ -77,13 +77,13 @@ namespace netDumbster.smtp
         public Hashtable Headers
         {
             get
-              {
-            if( headerFields == null )
             {
-              headerFields = ParseHeaders( data.ToString() );
+                if( headerFields == null )
+                {
+                  headerFields = ParseHeaders( data.ToString() );
+                }
+                return headerFields;
             }
-            return headerFields;
-              }
         }
 
         public string Importance
@@ -104,9 +104,9 @@ namespace netDumbster.smtp
         public SmtpMessagePart[] MessageParts
         {
             get
-              {
-            return parseMessageParts();
-              }
+            {
+                return parseMessageParts();
+            }
         }
 
         public string Priority
@@ -148,15 +148,15 @@ namespace netDumbster.smtp
         #region Methods
 
         /// <summary>Append data to message data.</summary>
-        public void AddData( String data )
+        public void AddData(String data)
         {
-            this.data.Append( data );
+            this.data.Append(data);
         }
 
         /// <summary>Addes an address to the recipient list.</summary>
-        public void AddToAddress( EmailAddress address )
+        public void AddToAddress(EmailAddress address)
         {
-            recipientAddresses.Add( address );
+            recipientAddresses.Add(address);
         }
 
         /// <summary>
@@ -180,9 +180,9 @@ namespace netDumbster.smtp
                 Match valueMatch = Regex.Match( headerString, headerKey + @":(?<value>.*?)\r\n[\S\r]", RegexOptions.Singleline );
                 if( valueMatch.Success )
                 {
-                    string headerValue = valueMatch.Result( "${value}" ).Trim();
-                    headerValue = Regex.Replace( headerValue, "\r\n", "" );
-                    headerValue = Regex.Replace( headerValue, @"\s+", " " );
+                    string headerValue = valueMatch.Result("${value}").Trim();
+                    headerValue = Regex.Replace(headerValue, "\r\n", "");
+                    headerValue = Regex.Replace(headerValue, @"\s+", " ");
                     // TODO: Duplicate headers (like Received) will be overwritten by the 'last' value.
                     // Header key are lower cased to avoid case sensitive issues.
                     headerFields[headerKey.ToLowerInvariant()] = headerValue;
@@ -196,7 +196,8 @@ namespace netDumbster.smtp
         {
             string message = data.ToString();
             string contentType = (string)Headers["content-type"];
-
+            string contentTransferEncoding = (string)Headers["content-transfer-encoding"];
+ 
             // Check to see if it is a Multipart Messages
             if (contentType != null && Regex.Match(contentType, "multipart/mixed", RegexOptions.IgnoreCase).Success)
             {
@@ -224,7 +225,7 @@ namespace netDumbster.smtp
                         if (lastIndex != -1)
                         {
                             messagePartText = message.Substring(lastIndex, currentIndex - lastIndex);
-                            messageParts.Add(new SmtpMessagePart(messagePartText));
+                            messageParts.Add(new SmtpMessagePart(TransformMessage(contentTransferEncoding, messagePartText)));
                         }
 
                         lastIndex = currentIndex + matchLength;
@@ -235,9 +236,19 @@ namespace netDumbster.smtp
             }
             else
             {
-                return new SmtpMessagePart[] { new SmtpMessagePart(data.ToString()) };
+                return new SmtpMessagePart[] { new SmtpMessagePart(TransformMessage(contentTransferEncoding, message)) };
             }
             return new SmtpMessagePart[0];
+        }
+
+        private static string TransformMessage(string contentTransferEncoding, string message)
+        {
+            if (contentTransferEncoding == "8bit")
+            {
+                return Encoding.UTF8.GetString(Encoding.GetEncoding(1252).GetBytes(message));
+            }
+
+            return message;
         }
 
         #endregion Methods
