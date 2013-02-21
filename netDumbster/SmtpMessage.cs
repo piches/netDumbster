@@ -80,7 +80,7 @@ namespace netDumbster.smtp
             {
                 if( headerFields == null )
                 {
-                  headerFields = ParseHeaders( data.ToString() );
+                    headerFields = ParseHeaders(data.ToString());
                 }
                 return headerFields;
             }
@@ -128,7 +128,7 @@ namespace netDumbster.smtp
         {
             get
             {
-                return (EmailAddress[]) recipientAddresses.ToArray( typeof( EmailAddress ) );
+                return (EmailAddress[])recipientAddresses.ToArray(typeof(EmailAddress));
             }
         }
 
@@ -165,7 +165,7 @@ namespace netDumbster.smtp
         /// </summary>
         /// <param name="partData">The raw message or message part data.</param>
         /// <returns>A hashtable of the header keys and values.</returns>
-        internal static Hashtable ParseHeaders( string partData )
+        internal static Hashtable ParseHeaders(string partData)
         {
             Hashtable headerFields = new Hashtable();
 

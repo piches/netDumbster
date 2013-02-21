@@ -34,9 +34,9 @@ namespace netDumbster.smtp
         /// the attachment, without the "------=_NextPart" separator strings.
         /// The last 4 characters of the data will be "\r\n\r\n".
         /// </summary>
-        public SmtpMessagePart( string data )
+        public SmtpMessagePart(string data)
         {
-            string[] parts = Regex.Split( data, DOUBLE_NEWLINE );
+            string[] parts = Regex.Split(data, DOUBLE_NEWLINE);
 
             headerData = parts[0];
             bodyData = parts[1];
@@ -71,9 +71,9 @@ namespace netDumbster.smtp
         {
             get
             {
-                if( headerFields == null )
+                if(headerFields == null)
                 {
-                    headerFields = SmtpMessage.ParseHeaders( headerData );
+                    headerFields = SmtpMessage.ParseHeaders(headerData);
                 }
                 return headerFields;
             }
